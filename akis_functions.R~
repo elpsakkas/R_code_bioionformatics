@@ -1,0 +1,118 @@
+#########################
+
+#### File with various task functions 
+### Author : Akis Sakkas
+## Date: 2016
+
+count.genes <- function(x, lim=1){
+  length(which(x>lim))
+}
+
+color.data.frame <- function(x,){
+  x$Color="black"
+  x$Color
+  
+}
+count.genes <- function(x, lim=1){
+  length(which(x>lim))
+}
+
+count.gfp <- function(x){
+  gfp <- x[which(rownames(x)=="pAcGFP1-N1"),]
+  t(log2(gfp+1))
+}
+
+
+color.stage <- function(x){
+  color.palette <-colorRampPalette(c("cyan1",
+                                     "chartreuse1",
+                                     "seagreen",
+                                     "skyblue3",
+                                     "darkblue"),space="Lab")
+  color.palette(length(x$Stage))[rank(x$Stage)]
+}                   
+                   
+colStage <- color.stage(met)
+
+
+legend('topright',c('E16','E19','P2','P21','P60'),pch=c(15,15,15,15,15),
+       col=c('cyan1','chartreuse1','seagreen','skyblue3','darkblue'),cex=0.7)
+#col.list <- c("cyan1","chartreuse1","seagreen","skyblue3","darkblue")
+#palette(col.list)
+
+color.cluster <- function(x){
+          coloring <-colorRampPalette(c("red",
+                                     "black"),space="Lab")
+  coloring(length(number.genes))[rank(number.genes)]
+}                   
+
+colCluster <- color.cluster(met)
+
+
+######### Another way of coloring
+  color.palette <- c("red",
+                      "orange",
+                      "yellow",
+                      "green",
+                      "cyan",
+                      "lightblue",
+                      "black")
+  
+palette(color.palette) # Use col in the function
+
+par=(cex=3.0)
+plot(dif,pch = c(2, 0, 20)[as.numeric(met$shape)],
+col = c("red", "orange","gold","green","cyan","lightblue","black")[as.numeric(met$clus_hc)])
+
+
+
+legend('topright',c("cluster_1","cluster_2","cluster_3","cluster_4","cluster_5","cluster_6","cluster_7"),
+       col = c("red", "orange","gold","green","cyan","lightblue","black"),
+       pch=c(20,20,20,20,20,20,20),bty="n",cex=2)
+legend('bottomright',c('E16','E19','P2','P21','P60'),pch=c(2,0,0,20,20),,cex=2,bty="n")
+
+
+heatmap <- heatmap.2(as.matrix(most.imp.genes),cexRow=0.6,cexCol=0.40,key='True',
+                     main= "RF most important genes",
+                     scale="none",trace='none',
+                     Colv=as.dendrogram(pfit),dendrogram="column",
+                     ColSideColor=c("grey","black","darkgreen","darkred","orange","blue","red")[as.numeric(meta$clusterboot)],
+                     labCol=F,col=my_palette)
+
+my_palette <- colorRampPalette(c("red", "orange","yellow","white"))(n = 20)
+
+##### Running ggplot2 package for visualization - TSNE
+
+p1 <- ggplot(data=as.data.frame(tsne_out$Y), 
+             aes(x=tsne_out$Y[,1],y=tsne_out$Y[,2]))
+p1 + geom_point(aes(colour = gfp)) + 
+scale_colour_gradient(low = "black",high = 'orange') +
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+####Violin plots 1
+mat2 <- mat1[,c('Scgb1a1','Hp','Cbr2','Cyp2f2','Foxj1','Drc1','Lrrc23','Rsph1','Sftpb','Sftpc','Scd1','Prrx1','Ctdnep1','Scgb3a1','Cacna1d','Tff2')]
+df.m <- reshape2::melt(mat2, id.vars = NULL)
+colnames(df.m) <- c('Gene','Expression')
+ggplot(df.m, aes(x = Gene, y = Expression)) +  geom_violin(fill = 'grey80', colour = "#3366FF") 
+####Violin plots 2 (automated)
+plotViolFunc <- function(x, na.rm = TRUE, ...) {
+  nm <- colnames(x)
+  for (i in seq_along(nm)) {
+    print(ggplot(x,aes_string(groups,nm[i])) + geom_violin() + geom_jitter(height = 0)) 
+    }
+}
+pdf('viol_plots.pdf')
+plotViolFunc(as.data.frame(mat1))
+dev.off()
+######################################################    
+plotTsneFunc <- function(x, na.rm = TRUE, ...) {
+  nm <- colnames(x)
+  for (i in seq_along(nm)) {
+    print(ggplot(data=as.data.frame(tsne_out$Y),aes(x=tsne_out$Y[,1],y=tsne_out$Y[,2])) + geom_point(aes(colour=nm[i])))
+  }
+}
+
+plotTsneFunc(as.data.frame(mat1))
+
+
+

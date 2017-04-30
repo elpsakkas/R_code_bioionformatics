@@ -1,0 +1,61 @@
+###### Random forest permutations with importance features
+
+
+
+library(randomForest,lib.loc='/home/rstudio/R/')
+library(rfPermute,lib.loc='/home/rstudio/R/')
+library(DESeq2,lib.loc='/home/rstudio/R/')
+
+start.time <- Sys.time()
+
+
+
+cd <- read.csv('/home/rstudio/SingleCellProject/R_wdir/Final_data/counts_filtered_final_441.csv',row.names=1)
+meta <- read.csv('/home/rstudio/SingleCellProject/R_wdir/Final_data/metadata_all_filtered_final_441.csv',row.names=1)
+
+
+meta$rf <- 'unknown'
+meta$rf <- ifelse(meta$clusterboot=='1',meta$rf,2)
+groups <- meta$rf
+
+
+
+
+cd <- cd[rowSums(cd>0)>10, ]
+cd <- cd[rowSums(cd)>10, ]
+
+geneTypes <- factor( c( ENSM="ENSM", ERCC="ERCC" )[
+  substr( rownames(cd), 1, 4 ) ] )
+
+
+#countsERCC <- cd[ which( geneTypes=="ERCC" ), ]
+#sfERCC <- estimateSizeFactorsForMatrix( countsERCC )
+
+countsMmus <- cd[ which( geneTypes=="ENSM" ), ]
+sfMmus <- estimateSizeFactorsForMatrix( countsMmus )
+nCountsMmus <- t( t(countsMmus) / sfMmus )
+LogNcountsMmus=log2(nCountsMmus+1)
+
+mat <- LogNcountsMmus
+
+
+
+cluster_1 <- rfPermute(x = t(mat), y = as.factor(groups), ntree = 1000, 
+                        importance = T, proximity = T, 
+                        do.trace = T, varImpPlot = T,
+                        varUsed = T,nrep = 1, num.cores = 1)
+
+
+
+#plot(rp.importance(orange), alpha = 0.05, sig.only = T,n=50,type="MeanDecreaseGini")
+
+
+
+write.csv(rp.importance(cluster_1),file="important_genes_cluster_1.csv")
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+
+save.image('RF_clusters.RData')
